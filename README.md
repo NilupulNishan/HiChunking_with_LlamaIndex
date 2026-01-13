@@ -1,196 +1,372 @@
-# Hierarchical RAG Chatbot
+# 🚀 Hierarchical RAG Chatbot
 
-A production-ready chatbot built with hierarchical chunking and auto-merging retrieval-augmented generation (RAG) capabilities, powered by Azure OpenAI embeddings.
+Production-ready Retrieval-Augmented Generation system with hierarchical document chunking, powered by Azure OpenAI.
 
-## Features
+## ✨ Features
 
-- **Hierarchical Chunking**: Multi-level document chunking for better context preservation
-- **Auto-Merge Retrieval**: Intelligent chunk merging during retrieval for optimal context
-- **Azure OpenAI Integration**: Leverages Azure OpenAI for embeddings and completions
-- **Vector Storage**: Efficient storage and retrieval of document embeddings
-- **FastAPI Backend**: RESTful API for seamless integration
-- **PDF Processing**: Automated PDF document ingestion and processing
+- **Hierarchical Chunking**: Multi-level document structure (sections → subsections → paragraphs)
+- **Auto-Merge Retrieval**: Intelligent merging of sibling chunks for better context
+- **State-of-the-Art Models**:
+  - Embeddings: `text-embedding-3-large` (3072 dimensions)
+  - LLM: `gpt-4o`
+- **ChromaDB**: Fast, local vector database
+- **300-Page PDF Support**: Handles large documents efficiently
+- **Interactive CLI**: Beautiful command-line interface
 
-## Project Structure
+## 📋 Prerequisites
+
+- Python 3.9+
+- Azure OpenAI account with:
+  - `text-embedding-3-large` deployment
+  - `gpt-4o` deployment
+- 8GB+ RAM (for processing large PDFs)
+
+## 🛠️ Installation
+
+### 1. Clone/Create Project
+
+```bash
+# Create project structure
+bash project_structure.sh
+
+# Navigate to project
+cd hierarchical-rag-chatbot
+```
+
+### 2. Create Virtual Environment
+
+```bash
+# Create venv
+python -m venv venv
+
+# Activate
+# On Linux/Mac:
+source venv/bin/activate
+# On Windows:
+venv\Scripts\activate
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 4. Download NLTK Data
+
+```bash
+python -c "import nltk; nltk.download('punkt')"
+```
+
+### 5. Configure Azure OpenAI
+
+```bash
+# Copy environment template
+cp config/.env.example .env
+
+# Edit .env with your Azure credentials
+nano .env  # or use your favorite editor
+```
+
+Edit `.env`:
+
+```bash
+AZURE_OPENAI_API_KEY=your-actual-api-key-here
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_API_VERSION=2024-02-15-preview
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-large
+AZURE_OPENAI_LLM_DEPLOYMENT=gpt-4o
+EMBEDDING_DIMENSIONS=3072
+```
+
+## 📁 Project Structure
 
 ```
 hierarchical-rag-chatbot/
 ├── src/
-│   ├── chunking/          # Hierarchical chunking logic
-│   │   ├── hierarchical_chunker.py
-│   │   └── pdf_processor.py
-│   ├── retrieval/         # Retrieval & auto-merge
-│   │   ├── retriever.py
-│   │   └── auto_merge.py
-│   ├── embeddings/        # Azure OpenAI embeddings
-│   │   └── azure_embeddings.py
-│   ├── storage/           # Vector storage
-│   │   └── vector_store.py
-│   └── api/               # FastAPI chatbot API
-│       ├── chatbot.py
-│       └── main.py
+│   ├── chunking/
+│   │   ├── pdf_processor.py       # PDF text extraction
+│   │   └── hierarchical_chunker.py # Multi-level chunking
+│   ├── embeddings/
+│   │   └── azure_embeddings.py    # text-embedding-3-large
+│   ├── storage/
+│   │   └── chroma_store.py        # ChromaDB vector store
+│   ├── retrieval/
+│   │   ├── auto_merge_retriever.py # Auto-merge algorithm
+│   │   └── query_engine.py        # Query orchestration
+│   └── utils/
+│       └── logger.py              # Logging setup
 ├── data/
-│   ├── raw/              # Original PDFs
-│   ├── processed/        # Processed chunks
-│   └── indexes/          # Vector indexes
+│   ├── raw/                       # Place PDFs here
+│   ├── processed/                 # Chunk visualizations
+│   └── indexes/                   # ChromaDB storage
 ├── config/
-│   ├── config.yaml
-│   └── .env.example
-├── tests/                # Unit tests
-├── notebooks/            # Jupyter notebooks
-├── logs/                 # Application logs
-├── requirements.txt
-├── setup.py
-├── Dockerfile
-└── README.md
+│   ├── config.yaml                # Main configuration
+│   └── .env                       # Azure credentials
+├── run_indexing.py                # Index PDFs
+├── run_chatbot.py                 # Interactive chatbot
+└── requirements.txt               # Dependencies
 ```
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Python 3.8+
-- Azure OpenAI API access
-- Docker (optional, for containerized deployment)
-
-## Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd hierarchical-rag-chatbot
-   ```
-
-2. **Create virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure environment variables**
-   ```bash
-   cp config/.env.example config/.env
-   # Edit config/.env with your Azure OpenAI credentials
-   ```
-
-## Configuration
-
-Edit `config/config.yaml` to customize:
-
-- Chunking parameters (chunk size, overlap)
-- Retrieval settings (top-k, similarity threshold)
-- Azure OpenAI model configurations
-- Vector store settings
-
-Example `.env` file:
-```env
-AZURE_OPENAI_API_KEY=your_api_key_here
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_DEPLOYMENT_NAME=your_deployment_name
-AZURE_OPENAI_API_VERSION=2024-02-01
-```
-
-## Usage
-
-### 1. Process Documents
-
-Place your PDF files in `data/raw/` and run:
+### Step 1: Add Your PDFs
 
 ```bash
-python -m src.chunking.pdf_processor
+# Copy your PDFs to the raw data directory
+cp /path/to/your/document.pdf data/raw/
 ```
 
-### 2. Start the API Server
+### Step 2: Index Documents
 
 ```bash
-uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
+python run_indexing.py
 ```
 
-### 3. Query the Chatbot
+This will:
+1. Extract text from PDFs
+2. Create hierarchical chunks (3 levels)
+3. Generate embeddings using text-embedding-3-large
+4. Store in ChromaDB
 
-**Using curl:**
+**Expected output:**
+```
+🚀 Hierarchical RAG Indexing Pipeline
+
+✓ Found 1 PDF file(s)
+
+Processing: your_document.pdf
+  ✓ Extracted 300 pages
+  ✓ Total words: 150,000
+  ✓ Created 1,234 chunks (890 leaf nodes)
+
+┏━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┓
+┃ Level ┃ Count ┃ Avg Tokens ┃
+┡━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━┩
+│ 1     │ 45    │ 2048       │
+│ 2     │ 299   │ 512        │
+│ 3     │ 890   │ 128        │
+└───────┴───────┴────────────┘
+
+✅ Indexing Complete!
+```
+
+### Step 3: Run Chatbot
+
 ```bash
-curl -X POST "http://localhost:8000/chat" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "What is the main topic of the document?"}'
+python run_chatbot.py
 ```
 
-**Using Python:**
+**Chat with your documents:**
+```
+🤖 Hierarchical RAG Chatbot
+
+You: What are the main findings of this document?
+
+Answer:
+[Beautiful formatted response with citations]
+
+📚 Sources (3 chunks):
+[Relevant excerpts with page numbers]
+```
+
+## 💡 Usage Examples
+
+### Basic Query
 ```python
-import requests
+You: Summarize the methodology section
+```
 
-response = requests.post(
-    "http://localhost:8000/chat",
-    json={"query": "What is the main topic of the document?"}
+### Specific Information
+```python
+You: What are the key recommendations mentioned?
+```
+
+### Page-Specific
+```python
+You: What does page 45 discuss?
+```
+
+### Commands
+- `stats` - Show index statistics
+- `clear` - Clear screen
+- `exit` or `quit` - Exit chatbot
+
+## ⚙️ Configuration
+
+### Adjust Embedding Dimensions (Cost Optimization)
+
+In `.env`:
+```bash
+# Reduce dimensions for lower cost (slight quality trade-off)
+EMBEDDING_DIMENSIONS=1536  # Options: 3072, 1536, 768, 512, 256
+```
+
+### Adjust Chunk Sizes
+
+In `config/config.yaml`:
+```yaml
+chunking:
+  levels:
+    - level: 1
+      target_tokens: 2048  # Adjust as needed
+    - level: 2
+      target_tokens: 512
+    - level: 3
+      target_tokens: 128
+```
+
+### Adjust Retrieval
+
+In `config/config.yaml`:
+```yaml
+retrieval:
+  base:
+    top_k: 12              # Number of leaf chunks to retrieve
+  auto_merge:
+    merge_threshold: 2     # Min siblings to trigger merge
+```
+
+## 💰 Cost Estimation
+
+For a 300-page PDF (~150,000 words):
+
+### One-Time Indexing
+- **Embedding**: ~200k tokens × $0.00013/1k = **$0.026**
+- **Storage**: Negligible (local ChromaDB)
+
+### Per Query
+- **Query embedding**: 1 × 50 tokens × $0.00013/1k = **$0.000007**
+- **LLM (gpt-4o)**:
+  - Input: ~4k tokens × $0.0025/1k = **$0.01**
+  - Output: ~500 tokens × $0.01/1k = **$0.005**
+- **Total per query**: ~**$0.015**
+
+### Monthly (1000 queries)
+- **Total**: ~**$15-20/month**
+
+## 🔧 Advanced Features
+
+### Programmatic Usage
+
+```python
+from src.storage.chroma_store import get_chroma_store
+from src.retrieval.query_engine import create_query_engine
+from llama_index.core import StorageContext
+
+# Load index
+chroma_store = get_chroma_store()
+index = chroma_store.load_index()
+
+# Create storage context
+storage_context = StorageContext.from_defaults(
+    vector_store=chroma_store.vector_store
 )
-print(response.json())
+
+# Create query engine
+query_engine = create_query_engine(index, storage_context)
+
+# Query
+response = query_engine.query("Your question here")
+print(response.response)
+
+# Access sources
+for node in response.source_nodes:
+    print(f"Score: {node.score}")
+    print(f"Text: {node.node.get_content()}")
 ```
 
-## Docker Deployment
+### Batch Processing
 
-Build and run with Docker:
+```python
+from src.chunking.pdf_processor import PDFProcessor
+
+processor = PDFProcessor()
+docs = processor.batch_process_pdfs(Path("data/raw"))
+```
+
+### Reset Index
 
 ```bash
-docker build -t hierarchical-rag-chatbot .
-docker run -p 8000:8000 --env-file config/.env hierarchical-rag-chatbot
+python -c "
+from src.storage.chroma_store import get_chroma_store
+store = get_chroma_store()
+store.reset()
+print('Index reset')
+"
 ```
 
-## API Endpoints
+## 📊 Monitoring
 
-- `POST /chat` - Send a query to the chatbot
-- `GET /health` - Health check endpoint
-- `POST /upload` - Upload new PDF documents
-- `GET /documents` - List processed documents
+Logs are stored in `logs/`:
+- `app.log` - All logs
+- `error.log` - Errors only
 
-## Development
-
-### Running Tests
-
+View logs:
 ```bash
-pytest tests/
+tail -f logs/app.log
 ```
 
-### Jupyter Notebooks
+## 🐛 Troubleshooting
 
-Explore example notebooks in the `notebooks/` directory:
-- `01_chunking_demo.ipynb` - Hierarchical chunking examples
-- `02_retrieval_demo.ipynb` - Retrieval and auto-merge examples
-- `03_end_to_end.ipynb` - Complete RAG pipeline
+### Issue: "No documents in index"
+**Solution**: Run `python run_indexing.py` first
 
-## Architecture
+### Issue: "Azure OpenAI authentication error"
+**Solution**: Check your `.env` file credentials
 
-1. **Document Ingestion**: PDFs are processed and split into hierarchical chunks
-2. **Embedding Generation**: Azure OpenAI generates embeddings for each chunk
-3. **Vector Storage**: Embeddings are stored with metadata in a vector database
-4. **Retrieval**: User queries are embedded and matched against stored chunks
-5. **Auto-Merge**: Related chunks are intelligently merged for context
-6. **Generation**: Azure OpenAI generates responses using retrieved context
+### Issue: "Out of memory"
+**Solution**: 
+- Process PDFs one at a time
+- Reduce `EMBEDDING_DIMENSIONS`
+- Reduce chunk sizes in config
 
-## Contributing
+### Issue: "ChromaDB locked"
+**Solution**: Close all running instances
 
+## 🚢 Deployment
+
+### Docker (Coming Soon)
+```bash
+docker build -t hierarchical-rag .
+docker run -p 8000:8000 hierarchical-rag
+```
+
+### Azure Deployment
+See `docs/azure_deployment.md` for Azure App Service deployment guide.
+
+## 📈 Performance Tips
+
+1. **Use reduced dimensions** (1536 instead of 3072) for faster indexing
+2. **Batch process** multiple PDFs at once
+3. **Cache frequently asked questions** at application level
+4. **Monitor token usage** to optimize costs
+
+## 🤝 Contributing
+
+Contributions welcome! Please:
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Submit a pull request
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - See LICENSE file
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
-- Azure OpenAI for embeddings and completions
-- FastAPI for the web framework
-- LangChain for RAG utilities
+- Based on [HiChunk paper](https://arxiv.org/abs/2509.11552)
+- Built with [LlamaIndex](https://www.llamaindex.ai/)
+- Powered by [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
 
-## Support
+## 📞 Support
 
-For issues and questions, please open an issue on GitHub or contact the maintainers.
+For issues and questions:
+- Create an issue on GitHub
+- Check logs in `logs/error.log`
+- Review configuration in `config/config.yaml`
 
 ---
 
-**Status**: ✅ Project structure created successfully!
+**Built with ❤️ for better document understanding**
